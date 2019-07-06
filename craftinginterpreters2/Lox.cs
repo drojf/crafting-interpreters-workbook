@@ -42,6 +42,7 @@ namespace craftinginterpreters2
             {
                 Console.Write("> ");
                 Run(Console.ReadLine());
+                hadError = false;
             }
         }
 
