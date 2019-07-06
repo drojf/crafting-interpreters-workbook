@@ -39,7 +39,7 @@ namespace craftinginterpreters2
         {
             StringBuilder builder = new StringBuilder();
 
-            builder.Append("{").Append(name);
+            builder.Append("(").Append(name);
             foreach(Expr expr in exprs) {
                 builder.Append(" ");
                 builder.Append(expr.Accept(this));

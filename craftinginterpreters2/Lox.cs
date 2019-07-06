@@ -50,14 +50,18 @@ namespace craftinginterpreters2
         {
             Scanner scanner = new Scanner(source);
             List<Token> tokens = scanner.ScanTokens();
+            Parser parser = new Parser(tokens);
+            Expr expression = parser.parse();
 
-            foreach(Token token in tokens)
+            if(hadError)
             {
-                Console.WriteLine(token);
+                return;
             }
+
+            Console.WriteLine(new AstPrinter().Print(expression));
         }
 
-        static public void error(int line, String message)
+        public static void error(int line, String message)
         {
             report(line, "", message);
         }
@@ -66,6 +70,18 @@ namespace craftinginterpreters2
         {
             Console.Error.WriteLine("[line " + line + "] Error" + where + ": " + message);
             hadError = true;
+        }
+
+        public static void error(Token token, string message)
+        {
+            if(token.type == TokenType.EOF)
+            {
+                report(token.line, " at end", message);
+            }
+            else
+            {
+                report(token.line, $" at '{token.lexeme}'", message);
+            }
         }
     }
 }
