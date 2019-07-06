@@ -4,7 +4,7 @@ using System.Text;
 
 namespace craftinginterpreters2
 {
-    enum TokenType
+    public enum TokenType
     {
         // Single-character tokens.                      
         LEFT_PAREN, RIGHT_PAREN, LEFT_BRACE, RIGHT_BRACE,
