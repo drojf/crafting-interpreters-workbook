@@ -176,6 +176,10 @@ namespace craftinginterpreters2
                 return;
             }
 
+            // The closing "
+            Advance();
+
+            // Trim the surrounding quotes
             String value = source.JavaSubString(start + 1, current - 1);
             AddToken(TokenType.STRING, value);
         }
