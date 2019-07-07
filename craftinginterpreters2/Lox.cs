@@ -6,7 +6,9 @@ namespace craftinginterpreters2
 {
     class Lox
     {
+        private static readonly Interpreter intepreter = new Interpreter();
         static bool hadError = false;
+        static bool hadRuntimeError = false;
 
         static void Main(string[] args)
         {
@@ -34,6 +36,11 @@ namespace craftinginterpreters2
             {
                 Environment.Exit(65);
             }
+
+            if (hadRuntimeError)
+            {
+                Environment.Exit(70);
+            }
         }
 
         private static void RunPrompt()
@@ -57,6 +64,8 @@ namespace craftinginterpreters2
             {
                 return;
             }
+
+            intepreter.Intepret(expression);
 
             Console.WriteLine(new AstPrinter().Print(expression));
         }
@@ -82,6 +91,12 @@ namespace craftinginterpreters2
             {
                 report(token.line, $" at '{token.lexeme}'", message);
             }
+        }
+
+        public static void runtimeError(RuntimeError error)
+        {
+            Console.WriteLine($"\nError [line {error.token.line}]: {error.ToString()}");
+            hadRuntimeError = true;
         }
     }
 }
