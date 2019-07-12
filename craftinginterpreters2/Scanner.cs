@@ -106,7 +106,7 @@ namespace craftinginterpreters2
                     }
                     else
                     {
-                        Lox.error(line, "Unexpected character.");
+                        Lox.Error(line, "Unexpected character.");
                     }
                     break;
             }
@@ -172,7 +172,7 @@ namespace craftinginterpreters2
 
             if(IsAtEnd())
             {
-                Lox.error(line, "Unterminated string.");
+                Lox.Error(line, "Unterminated string.");
                 return;
             }
 
@@ -194,7 +194,7 @@ namespace craftinginterpreters2
             return source[current];
         }
 
-        private Boolean Match(char expected)
+        private bool Match(char expected)
         {
             if (IsAtEnd()) return false;
             if (source[current] != expected) return false;
@@ -214,9 +214,9 @@ namespace craftinginterpreters2
             AddToken(type, null);
         }
 
-        private void AddToken(TokenType type, Object literal)
+        private void AddToken(TokenType type, object literal)
         {
-            String text = source.JavaSubString(start, current);
+            string text = source.JavaSubString(start, current);
             tokens.Add(new Token(type, text, literal, line));
         }
 

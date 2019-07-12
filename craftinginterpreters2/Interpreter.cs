@@ -27,7 +27,7 @@ namespace craftinginterpreters2
             }
             catch(RuntimeError error)
             {
-                Lox.runtimeError(error);
+                Lox.RuntimeError(error);
             }
         }
 

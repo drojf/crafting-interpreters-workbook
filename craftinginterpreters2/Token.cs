@@ -7,8 +7,8 @@ namespace craftinginterpreters2
     public class Token
     {
         public readonly TokenType type;
-        public readonly String lexeme;
-        public readonly Object literal;
+        public readonly string lexeme;
+        public readonly object literal;
         public readonly int line;
 
         public Token(TokenType type, string lexeme, object literal, int line)
@@ -19,7 +19,7 @@ namespace craftinginterpreters2
             this.line = line;
         }
 
-        public override String ToString()
+        public override string ToString()
         {
             return type + " " + lexeme + " " + literal;
         }

@@ -19,7 +19,7 @@ namespace craftinginterpreters2
         public List<Stmt> Parse()
         {
             List<Stmt> statements = new List<Stmt>();
-            while(!isAtEnd())
+            while(!IsAtEnd())
             {
                 statements.Add(Declaration());
             }
@@ -31,7 +31,7 @@ namespace craftinginterpreters2
         {
             try
             {
-                if(match(TokenType.VAR))
+                if(Match(TokenType.VAR))
                 {
                     return VarDeclaration();
                 }
@@ -40,33 +40,33 @@ namespace craftinginterpreters2
             }
             catch(ParseError error)
             {
-                synchronize();
+                Synchronize();
                 return null;
             }
         }
 
         private Stmt VarDeclaration()
         {
-            Token name = consume(TokenType.IDENTIFIER, "Expect variable name.");
+            Token name = Consume(TokenType.IDENTIFIER, "Expect variable name.");
 
             Expr initializer = null;
-            if(match(TokenType.EQUAL))
+            if(Match(TokenType.EQUAL))
             {
                 initializer = Expression();
             }
 
-            consume(TokenType.SEMICOLON, "Expect ';' after variable declaration");
+            Consume(TokenType.SEMICOLON, "Expect ';' after variable declaration");
             return new Stmt.Var(name, initializer);
         }
 
         private Stmt Statement()
         {
-            if(match(TokenType.PRINT))
+            if(Match(TokenType.PRINT))
             {
                 return PrintStatement();
             }
 
-            if(match(TokenType.LEFT_BRACE))
+            if(Match(TokenType.LEFT_BRACE))
             {
                 return new Stmt.Block(Block());
             }
@@ -78,42 +78,42 @@ namespace craftinginterpreters2
         {
             List<Stmt> statements = new List<Stmt>();
 
-            while(!check(TokenType.RIGHT_BRACE) && !isAtEnd())
+            while(!Check(TokenType.RIGHT_BRACE) && !IsAtEnd())
             {
                 statements.Add(Declaration());
             }
 
-            consume(TokenType.RIGHT_BRACE, "Expect '}' after block.");
+            Consume(TokenType.RIGHT_BRACE, "Expect '}' after block.");
             return statements;
         }
 
         private Stmt PrintStatement()
         {
             Expr value = Expression();
-            consume(TokenType.SEMICOLON, "Expect ';' after value");
+            Consume(TokenType.SEMICOLON, "Expect ';' after value");
             return new Stmt.Print(value);
         }
 
         private Stmt ExpressionStatement()
         {
             Expr expr = Expression();
-            consume(TokenType.SEMICOLON, "Expect ';' after expression.");
+            Consume(TokenType.SEMICOLON, "Expect ';' after expression.");
             return new Stmt.Expression(expr);
         }
 
         private Expr Expression()
         {
-            return assignment();
+            return Assignment();
         }
 
-        private Expr assignment()
+        private Expr Assignment()
         {
-            Expr expr = equality();
+            Expr expr = Equality();
 
-            if(match(TokenType.EQUAL))
+            if(Match(TokenType.EQUAL))
             {
-                Token equals = previous();
-                Expr value = assignment();
+                Token equals = Previous();
+                Expr value = Assignment();
 
                 switch(expr)
                 {
@@ -121,147 +121,147 @@ namespace craftinginterpreters2
                         return new Expr.Assign(variableExpression.name, value);
                 }
 
-                error(equals, "Invalid assignment target.");
+                Error(equals, "Invalid assignment target.");
             }
 
             return expr;
         }
 
-        private Expr equality()
+        private Expr Equality()
         {
             // The default returned value if while loop never executes is just the result of comp()
-            Expr expr = comp();
+            Expr expr = Comp();
 
-            while(match(TokenType.BANG_EQUAL, TokenType.EQUAL_EQUAL))
+            while(Match(TokenType.BANG_EQUAL, TokenType.EQUAL_EQUAL))
             {
-                Token op = previous();
-                Expr right = comp();
+                Token op = Previous();
+                Expr right = Comp();
                 expr = new Expr.Binary(expr, op, right);
             }
 
             return expr;
         }
 
-        private Expr comp()
+        private Expr Comp()
         {
-            Expr expr = addition();
+            Expr expr = Addition();
 
-            while (match(TokenType.GREATER, TokenType.GREATER_EQUAL, TokenType.LESS, TokenType.LESS_EQUAL))
+            while (Match(TokenType.GREATER, TokenType.GREATER_EQUAL, TokenType.LESS, TokenType.LESS_EQUAL))
             {
-                Token op = previous();
-                Expr right = addition();
+                Token op = Previous();
+                Expr right = Addition();
                 expr = new Expr.Binary(expr, op, right);
             }
 
             return expr;
         }
 
-        private Expr addition()
+        private Expr Addition()
         {
-            Expr expr = multiplication();
+            Expr expr = Multiplication();
 
-            while (match(TokenType.MINUS, TokenType.PLUS))
+            while (Match(TokenType.MINUS, TokenType.PLUS))
             {
-                Token op = previous();
-                Expr right = multiplication();
+                Token op = Previous();
+                Expr right = Multiplication();
                 expr = new Expr.Binary(expr, op, right);
             }
 
             return expr;
         }
 
-        private Expr multiplication()
+        private Expr Multiplication()
         {
-            Expr expr = unary();
+            Expr expr = Unary();
 
-            while (match(TokenType.SLASH, TokenType.STAR))
+            while (Match(TokenType.SLASH, TokenType.STAR))
             {
-                Token op = previous();
-                Expr right = unary();
+                Token op = Previous();
+                Expr right = Unary();
                 expr = new Expr.Binary(expr, op, right);
             }
 
             return expr;
         }
 
-        private Expr unary()
+        private Expr Unary()
         {
-            if(match(TokenType.BANG, TokenType.MINUS))
+            if(Match(TokenType.BANG, TokenType.MINUS))
             {
-                Token op = previous();
-                Expr right = unary();
+                Token op = Previous();
+                Expr right = Unary();
                 return new Expr.Unary(op, right);
             }
 
-            return primary();
+            return Primary();
         }
 
-        private Expr primary()
+        private Expr Primary()
         {
-            if(match(TokenType.FALSE))
+            if(Match(TokenType.FALSE))
             {
                 return new Expr.Literal(false);
             }
 
-            if(match(TokenType.TRUE))
+            if(Match(TokenType.TRUE))
             {
                 return new Expr.Literal(true);
             }
 
-            if(match(TokenType.NIL))
+            if(Match(TokenType.NIL))
             {
                 return new Expr.Literal(null);
             }
 
-            if(match(TokenType.NUMBER, TokenType.STRING))
+            if(Match(TokenType.NUMBER, TokenType.STRING))
             {
-                return new Expr.Literal(previous().literal);
+                return new Expr.Literal(Previous().literal);
             }
 
-            if(match(TokenType.LEFT_PAREN))
+            if(Match(TokenType.LEFT_PAREN))
             {
                 Expr expr = Expression();
-                consume(TokenType.RIGHT_PAREN, "Expect ')' after expresssion.");
+                Consume(TokenType.RIGHT_PAREN, "Expect ')' after expresssion.");
                 return new Expr.Grouping(expr);
             }
 
-            if(match(TokenType.IDENTIFIER))
+            if(Match(TokenType.IDENTIFIER))
             {
-                return new Expr.Variable(previous());
+                return new Expr.Variable(Previous());
             }
 
-            throw error(peek(), "Expect expression.");
+            throw Error(Peek(), "Expect expression.");
         }
 
         //Try to consume a token, but error out if the type does not match
-        private Token consume(TokenType type, string message)
+        private Token Consume(TokenType type, string message)
         {
-            if(check(type))
+            if(Check(type))
             {
-                return advance();
+                return Advance();
             }
 
-            throw error(peek(), message);
+            throw Error(Peek(), message);
         }
 
-        private ParseError error(Token token, string message)
+        private ParseError Error(Token token, string message)
         {
-            Lox.error(token, message);
+            Lox.Error(token, message);
             return new ParseError();
         }
 
-        private void synchronize()
+        private void Synchronize()
         {
-            advance();
+            Advance();
 
-            while(!isAtEnd())
+            while(!IsAtEnd())
             {
-                if(previous().type == TokenType.SEMICOLON)
+                if(Previous().type == TokenType.SEMICOLON)
                 {
                     return;
                 }
 
-                switch(peek().type)
+                switch(Peek().type)
                 {
                     case TokenType.CLASS:
                     case TokenType.FUN:
@@ -274,18 +274,18 @@ namespace craftinginterpreters2
                         return;
                 }
 
-                advance();
+                Advance();
             }
         }
 
         //advance if current token is of any of the given types
-        private Boolean match(params TokenType[] types)
+        private bool Match(params TokenType[] types)
         {
             foreach(TokenType type in types)
             {
-                if(check(type))
+                if(Check(type))
                 {
-                    advance();
+                    Advance();
                     return true;
                 }
             }
@@ -294,41 +294,39 @@ namespace craftinginterpreters2
         }
 
         //Check current token is of given type
-        private bool check(TokenType type)
+        private bool Check(TokenType type)
         {
-            if(isAtEnd())
+            if(IsAtEnd())
             {
                 return false;
             }
 
-            return peek().type == type;
+            return Peek().type == type;
         }
 
-        private Token advance()
+        private Token Advance()
         {
-            if(!isAtEnd())
+            if(!IsAtEnd())
             {
                 current++;
             }
 
-            return previous();
+            return Previous();
         }
 
-        private Boolean isAtEnd()
+        private bool IsAtEnd()
         {
-            return peek().type == TokenType.EOF;
+            return Peek().type == TokenType.EOF;
         }
 
-        private Token peek()
+        private Token Peek()
         {
             return tokens[current];
         }
 
-        private Token previous()
+        private Token Previous()
         {
             return tokens[current - 1];
         }
-
-
     }
 }

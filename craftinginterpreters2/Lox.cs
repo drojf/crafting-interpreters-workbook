@@ -68,30 +68,30 @@ namespace craftinginterpreters2
             intepreter.Intepret(statements);
         }
 
-        public static void error(int line, String message)
+        public static void Error(int line, String message)
         {
-            report(line, "", message);
+            Report(line, "", message);
         }
 
-        private static void report(int line, String where, String message)
+        private static void Report(int line, String where, String message)
         {
             Console.Error.WriteLine("[line " + line + "] Error" + where + ": " + message);
             hadError = true;
         }
 
-        public static void error(Token token, string message)
+        public static void Error(Token token, string message)
         {
             if(token.type == TokenType.EOF)
             {
-                report(token.line, " at end", message);
+                Report(token.line, " at end", message);
             }
             else
             {
-                report(token.line, $" at '{token.lexeme}'", message);
+                Report(token.line, $" at '{token.lexeme}'", message);
             }
         }
 
-        public static void runtimeError(RuntimeError error)
+        public static void RuntimeError(RuntimeError error)
         {
             Console.WriteLine($"\nError [line {error.token.line}]: {error.ToString()}");
             hadRuntimeError = true;
