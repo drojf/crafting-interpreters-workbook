@@ -20,10 +20,20 @@ namespace SyntaxTreeCodeGenerator
 
             defineAst(outputDir, "Expr", new List<string>()
             {
-              "Binary   : Expr left, Token op, Expr right",
-              "Grouping : Expr expression",
-              "Literal  : Object value",
-              "Unary    : Token op, Expr right",
+                "Assign     : Token name, Expr value",
+                "Binary     : Expr left, Token op, Expr right",
+                "Grouping   : Expr expression",
+                "Literal    : Object value",
+                "Unary      : Token op, Expr right",
+                "Variable   : Token name",
+            });
+
+            defineAst(outputDir, "Stmt", new List<string>()
+            {
+                "Block      : List<Stmt> statements",
+                "Expression : Expr expression",
+                "Print      : Expr expression",
+                "Var        : Token name, Expr initializer",
             });
         }
 

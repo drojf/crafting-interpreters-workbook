@@ -4,14 +4,26 @@ using System.Text;
 
 namespace craftinginterpreters2
 {
-    class Interpreter : Expr.Visitor<object>
+    class MyVoid
     {
-        public void Intepret(Expr expression)
+        public MyVoid()
+        {
+            throw new InvalidOperationException("Nothing isn't supposed to be instantiated");
+        }
+    }
+
+    class Interpreter : Expr.Visitor<object>, Stmt.Visitor<MyVoid>
+    {
+        private VariableEnvironment environment = new VariableEnvironment();
+
+        public void Intepret(List<Stmt> statements)
         {
             try
             {
-                object value = Evaluate(expression);
-                Console.WriteLine(Stringify(value));
+                foreach(Stmt statement in statements)
+                {
+                    Execute(statement);
+                }
             }
             catch(RuntimeError error)
             {
@@ -92,6 +104,11 @@ namespace craftinginterpreters2
             return null;
         }
 
+        private void Execute(Stmt stmt)
+        {
+            stmt.Accept(this);
+        }
+
         private string Stringify(object obj)
         {
             if(obj == null)
@@ -127,24 +144,73 @@ namespace craftinginterpreters2
             return Equals(a, b);
         }
 
-        private bool IsTruthy(object obj)
-        {
-            if(obj == null)
-            {
-                return false;
-            }
-
-            if(obj is bool)
-            {
-                return (bool) obj;
-            }
-
-            return true;
-        } 
-
         private object Evaluate(Expr expr)
         {
             return expr.Accept(this);
+        }
+
+        public MyVoid VisitExpressionStmt(Stmt.Expression stmt)
+        {
+            Evaluate(stmt.expression);
+            return null;
+        }
+
+        public MyVoid VisitPrintStmt(Stmt.Print stmt)
+        {
+            object value = Evaluate(stmt.expression);
+            Console.WriteLine(Stringify(value));
+            return null;
+        }
+
+        public MyVoid VisitVarStmt(Stmt.Var stmt)
+        {
+            object value = null;
+            if(stmt.initializer != null)
+            {
+                value = Evaluate(stmt.initializer);
+            }
+
+            environment.Define(stmt.name.lexeme, value);
+            return null;
+        }
+
+        public object VisitVariableExpr(Expr.Variable expr)
+        {
+            return environment.Get(expr.name);
+        }
+
+        public object VisitAssignExpr(Expr.Assign expr)
+        {
+            object value = Evaluate(expr.value);
+            environment.Assign(expr.name, value);
+            return value;
+        }
+
+        public MyVoid VisitBlockStmt(Stmt.Block stmt)
+        {
+            ExecuteBlock(stmt.statements, new VariableEnvironment(environment));
+            return null;
+        }
+
+        private void ExecuteBlock(List<Stmt> statements, VariableEnvironment environment)
+        {
+            //save the last environment (to be restored later)
+            VariableEnvironment previous = this.environment;
+
+            try
+            {
+                //change environment to the given one, and execute statments with this new environment
+                this.environment = environment;
+                foreach(Stmt statement in statements)
+                {
+                    Execute(statement);
+                }
+            }
+            finally
+            {
+                //even if there's an exception, we need to restore the last environment before continuing
+                this.environment = previous;
+            }
         }
     }
 }

@@ -7,13 +7,29 @@ namespace craftinginterpreters2
 public abstract class Expr {
 
    public interface Visitor<R> {
+    R VisitAssignExpr (Assign expr);
     R VisitBinaryExpr (Binary expr);
     R VisitGroupingExpr (Grouping expr);
     R VisitLiteralExpr (Literal expr);
     R VisitUnaryExpr (Unary expr);
+    R VisitVariableExpr (Variable expr);
     }
 
     public abstract R Accept<R>(Visitor<R> visitor);
+
+    public class Assign : Expr {
+        public readonly Token name;
+        public readonly Expr value;
+
+        public Assign (Token name, Expr value) {
+            this.name = name;
+            this.value = value;
+        }
+
+        public override R Accept<R>(Visitor<R> visitor) {
+            return visitor.VisitAssignExpr(this);
+        }
+    }
 
     public class Binary : Expr {
         public readonly Expr left;
@@ -66,6 +82,18 @@ public abstract class Expr {
 
         public override R Accept<R>(Visitor<R> visitor) {
             return visitor.VisitUnaryExpr(this);
+        }
+    }
+
+    public class Variable : Expr {
+        public readonly Token name;
+
+        public Variable (Token name) {
+            this.name = name;
+        }
+
+        public override R Accept<R>(Visitor<R> visitor) {
+            return visitor.VisitVariableExpr(this);
         }
     }
 

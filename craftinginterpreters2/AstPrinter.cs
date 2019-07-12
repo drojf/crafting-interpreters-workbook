@@ -11,6 +11,11 @@ namespace craftinginterpreters2
             return expr.Accept(this);
         }
 
+        public string VisitAssignExpr(Expr.Assign expr)
+        {
+            return "Printing assign expression not implemeneted";
+        }
+
         public string VisitBinaryExpr(Expr.Binary expr)
         {
             return Parenthesize(expr.op.lexeme, expr.left, expr.right);
@@ -33,6 +38,11 @@ namespace craftinginterpreters2
         public string VisitUnaryExpr(Expr.Unary expr)
         {
             return Parenthesize(expr.op.lexeme, expr.right);
+        }
+
+        public string VisitVariableExpr(Expr.Variable expr)
+        {
+            return "Printing variable expression not implemeneted";
         }
 
         private string Parenthesize(string name, params Expr[] exprs)

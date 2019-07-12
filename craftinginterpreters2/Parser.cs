@@ -16,21 +16,115 @@ namespace craftinginterpreters2
             this.tokens = tokens;
         }
 
-        public Expr parse()
+        public List<Stmt> Parse()
+        {
+            List<Stmt> statements = new List<Stmt>();
+            while(!isAtEnd())
+            {
+                statements.Add(Declaration());
+            }
+
+            return statements;
+        }
+
+        private Stmt Declaration()
         {
             try
             {
-                return expression();
+                if(match(TokenType.VAR))
+                {
+                    return VarDeclaration();
+                }
+
+                return Statement();
             }
             catch(ParseError error)
             {
+                synchronize();
                 return null;
             }
         }
 
-        private Expr expression()
+        private Stmt VarDeclaration()
         {
-            return equality();
+            Token name = consume(TokenType.IDENTIFIER, "Expect variable name.");
+
+            Expr initializer = null;
+            if(match(TokenType.EQUAL))
+            {
+                initializer = Expression();
+            }
+
+            consume(TokenType.SEMICOLON, "Expect ';' after variable declaration");
+            return new Stmt.Var(name, initializer);
+        }
+
+        private Stmt Statement()
+        {
+            if(match(TokenType.PRINT))
+            {
+                return PrintStatement();
+            }
+
+            if(match(TokenType.LEFT_BRACE))
+            {
+                return new Stmt.Block(Block());
+            }
+
+            return ExpressionStatement();
+        }
+
+        private List<Stmt> Block()
+        {
+            List<Stmt> statements = new List<Stmt>();
+
+            while(!check(TokenType.RIGHT_BRACE) && !isAtEnd())
+            {
+                statements.Add(Declaration());
+            }
+
+            consume(TokenType.RIGHT_BRACE, "Expect '}' after block.");
+            return statements;
+        }
+
+        private Stmt PrintStatement()
+        {
+            Expr value = Expression();
+            consume(TokenType.SEMICOLON, "Expect ';' after value");
+            return new Stmt.Print(value);
+        }
+
+        private Stmt ExpressionStatement()
+        {
+            Expr expr = Expression();
+            consume(TokenType.SEMICOLON, "Expect ';' after expression.");
+            return new Stmt.Expression(expr);
+        }
+
+        private Expr Expression()
+        {
+            return assignment();
+        }
+
+        private Expr assignment()
+        {
+            Expr expr = equality();
+
+            if(match(TokenType.EQUAL))
+            {
+                Token equals = previous();
+                Expr value = assignment();
+
+                switch(expr)
+                {
+                    case Expr.Variable variableExpression:
+                        return new Expr.Assign(variableExpression.name, value);
+                }
+
+                error(equals, "Invalid assignment target.");
+            }
+
+            return expr;
         }
 
         private Expr equality()
@@ -126,9 +220,14 @@ namespace craftinginterpreters2
 
             if(match(TokenType.LEFT_PAREN))
             {
-                Expr expr = expression();
+                Expr expr = Expression();
                 consume(TokenType.RIGHT_PAREN, "Expect ')' after expresssion.");
                 return new Expr.Grouping(expr);
+            }
+
+            if(match(TokenType.IDENTIFIER))
+            {
+                return new Expr.Variable(previous());
             }
 
             throw error(peek(), "Expect expression.");

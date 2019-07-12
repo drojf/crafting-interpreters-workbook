@@ -58,16 +58,14 @@ namespace craftinginterpreters2
             Scanner scanner = new Scanner(source);
             List<Token> tokens = scanner.ScanTokens();
             Parser parser = new Parser(tokens);
-            Expr expression = parser.parse();
+            List<Stmt> statements = parser.Parse();
 
             if(hadError)
             {
                 return;
             }
 
-            intepreter.Intepret(expression);
-
-            Console.WriteLine(new AstPrinter().Print(expression));
+            intepreter.Intepret(statements);
         }
 
         public static void error(int line, String message)
