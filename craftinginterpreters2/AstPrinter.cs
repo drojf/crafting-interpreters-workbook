@@ -35,6 +35,11 @@ namespace craftinginterpreters2
             return expr.value.ToString();
         }
 
+        public string VisitLogicalExpr(Expr.Logical expr)
+        {
+            return "Printing logical expression not implemented";
+        }
+
         public string VisitUnaryExpr(Expr.Unary expr)
         {
             return Parenthesize(expr.op.lexeme, expr.right);

@@ -212,5 +212,62 @@ namespace craftinginterpreters2
                 this.environment = previous;
             }
         }
+
+        private bool isTruthy(object o)
+        {
+            switch(o) {
+                case bool b:
+                    return b;
+
+                default:
+                    return o == null ? false : true;
+            }
+        }
+
+        public MyVoid VisitIfStmt(Stmt.If stmt)
+        {
+            if(isTruthy(Evaluate(stmt.condition)))
+            {
+                Execute(stmt.thenBranch);
+            } 
+            else if(stmt.elseBranch != null)
+            {
+                Execute(stmt.elseBranch);
+            }
+
+            return null;
+        }
+
+        public object VisitLogicalExpr(Expr.Logical expr)
+        {
+            object left = Evaluate(expr.left);
+
+            if (expr.op.type == TokenType.OR)
+            {
+                if (isTruthy(left))
+                {
+                    return left;
+                }
+            }
+            else
+            {
+                if (!isTruthy(left))
+                {
+                    return left;
+                }
+            }
+
+            return Evaluate(expr.right);
+        }
+
+        public MyVoid VisitWhileStmt(Stmt.While stmt)
+        {
+            while(isTruthy(Evaluate(stmt.condition)))
+            {
+                Execute(stmt.body);
+            }
+
+            return null;
+        }
     }
 }
