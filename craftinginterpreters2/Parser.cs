@@ -121,39 +121,33 @@ namespace craftinginterpreters2
             }
             Consume(TokenType.RIGHT_PAREN, "Expect ')' after for clauses.");
 
-            // This is our for loop translated into a while loop.
-            // Firstly set body to the given body of the for loop
-            Stmt body = Statement();
+            // This is the for loop body provided by the user
+            Stmt forLoopBody = Statement();
 
-            // If an increment expression was given, insert it after the body
-            // (for loop increments occur after the first loop iteration)
+            //////////////// The for loop is rewritten as a while loop. ///////////
+            //Copy for loop body into a list of while loop statements
+            List<Stmt> whileLoopStatements = new List<Stmt> { forLoopBody };
+
+            //If an increment was given, append it to the list of while loop statements
             if (increment != null)
             {
-                body = new Stmt.Block(new List<Stmt>
-                {
-                    body,
-                    new Stmt.Expression(increment),
-                });
+                whileLoopStatements.Add(new Stmt.Expression(increment));
             }
 
-            // If no condition provided, generated while loop should loop forever
-            if(condition == null)
+            //Form the while loop, without the initializer
+            //Condition is forced to "true" if the for loop had no condition expression
+            Stmt whileLoop = new Stmt.While(
+                condition ?? new Expr.Literal(true),
+                new Stmt.Block(whileLoopStatements)
+            );
+
+            //If no initializer given, just return the while loop.
+            //Otherwise, insert the initializer just above the while loop
+            return initializer == null ? whileLoop : new Stmt.Block(new List<Stmt>
             {
-                condition = new Expr.Literal(true);
-            }
-            body = new Stmt.While(condition, body);
-
-            //prepend initializer before the body, if one was given.
-            if(initializer != null)
-            {
-                body = new Stmt.Block(new List<Stmt> {
-                    initializer,
-                    body,
-                });
-            }
-
-
-            return body;
+                initializer,
+                whileLoop,
+            });
         }
 
 
