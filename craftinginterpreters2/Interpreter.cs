@@ -16,6 +16,7 @@ namespace craftinginterpreters2
     {
         public readonly VariableEnvironment globals;
         private VariableEnvironment environment;
+        private readonly Dictionary<Expr, int> locals = new Dictionary<Expr, int>();
 
         private class ClockFn : LoxCallable
         {
@@ -137,6 +138,11 @@ namespace craftinginterpreters2
             stmt.Accept(this);
         }
 
+        public void Resolve(Expr expr, int depth)
+        {
+            locals[expr] = depth;
+        } 
+
         private string Stringify(object obj)
         {
             if(obj == null)
@@ -204,13 +210,35 @@ namespace craftinginterpreters2
 
         public object VisitVariableExpr(Expr.Variable expr)
         {
-            return environment.Get(expr.name);
+            //return environment.Get(expr.name);
+            return LookUpVariable(expr.name, expr);
+        }
+
+        private object LookUpVariable(Token name, Expr expr)
+        {
+            if(locals.TryGetValue(expr, out int distance))
+            {
+                return environment.GetAt(distance, name.lexeme);
+            }
+            else
+            {
+                return globals.Get(name);
+            }
         }
 
         public object VisitAssignExpr(Expr.Assign expr)
         {
             object value = Evaluate(expr.value);
-            environment.Assign(expr.name, value);
+
+            if(locals.TryGetValue(expr, out int distance))
+            {
+                environment.AssignAt(distance, expr.name, value);
+            }
+            else
+            {
+                globals.Assign(expr.name, value);
+            }
+
             return value;
         }
 

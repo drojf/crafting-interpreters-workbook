@@ -56,5 +56,28 @@ namespace craftinginterpreters2
 
             throw new RuntimeError(name, $"Undefined variable'{name.lexeme}'.");
         }
+
+        public object GetAt(int distance, string name)
+        {
+            Ancestor(distance).values.TryGetValue(name, out object value);
+
+            return value;
+        }
+
+        public void AssignAt(int distance, Token name, object value)
+        {
+            Ancestor(distance).values[name.lexeme] = value;
+        }
+
+        VariableEnvironment Ancestor(int distance)
+        {
+            VariableEnvironment environment = this;
+            for(int i = 0; i < distance; i++)
+            {
+                environment = environment.enclosing;
+            }
+
+            return environment;
+        }
     }
 }

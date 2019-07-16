@@ -6,7 +6,7 @@ namespace craftinginterpreters2
 {
     class Lox
     {
-        private static readonly Interpreter intepreter = new Interpreter();
+        private static readonly Interpreter interpreter = new Interpreter();
         static bool hadError = false;
         static bool hadRuntimeError = false;
 
@@ -64,8 +64,15 @@ namespace craftinginterpreters2
             {
                 return;
             }
+            Resolver resolver = new Resolver(interpreter);
+            resolver.resolve(statements);
 
-            intepreter.Intepret(statements);
+            if(hadError)
+            {
+                return;
+            }
+
+            interpreter.Intepret(statements);
         }
 
         public static void Error(int line, String message)
