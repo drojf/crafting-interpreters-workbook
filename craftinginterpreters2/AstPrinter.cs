@@ -21,6 +21,11 @@ namespace craftinginterpreters2
             return Parenthesize(expr.op.lexeme, expr.left, expr.right);
         }
 
+        public string VisitCallExpr(Expr.Call expr)
+        {
+            return "Printing call expression not implemeneted";
+        }
+
         public string VisitGroupingExpr(Expr.Grouping expr)
         {
             return Parenthesize("group", expr.expression);

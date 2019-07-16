@@ -31,6 +31,11 @@ namespace craftinginterpreters2
         {
             try
             {
+                if(Match(TokenType.FUN))
+                {
+                    return function("function");
+                }
+
                 if(Match(TokenType.VAR))
                 {
                     return VarDeclaration();
@@ -43,6 +48,34 @@ namespace craftinginterpreters2
                 Synchronize();
                 return null;
             }
+        }
+
+        // "kind" is used to differentiate a class-method from a standalone method
+        private Stmt.Function function(string kind)
+        {
+            Token name = Consume(TokenType.IDENTIFIER, $"Expect {kind} name.");
+
+            // Parse parameter list
+            Consume(TokenType.LEFT_PAREN, $"Expect '(' after {kind} name.");
+            List<Token> parameters = new List<Token>();
+            if(!Check(TokenType.RIGHT_PAREN))
+            {
+                do
+                {
+                    if (parameters.Count >= 8)
+                    {
+                        Error(Peek(), "Cannot have more than 8 parameters.");
+                    }
+
+                    parameters.Add(Consume(TokenType.IDENTIFIER, "Expect parameter name."));
+                } while (Match(TokenType.COMMA));
+            }
+
+            Consume(TokenType.RIGHT_PAREN, "Expect ')' after parameters.");
+
+            Consume(TokenType.LEFT_BRACE, $"Expect '{{' before {kind} body.");
+            List<Stmt> body = Block();
+            return new Stmt.Function(name, parameters, body);
         }
 
         private Stmt VarDeclaration()
@@ -76,6 +109,11 @@ namespace craftinginterpreters2
                 return PrintStatement();
             }
 
+            if(Match(TokenType.RETURN))
+            {
+                return returnStatement();
+            }
+
             if(Match(TokenType.WHILE))
             {
                 return WhileStatement();
@@ -87,6 +125,22 @@ namespace craftinginterpreters2
             }
 
             return ExpressionStatement();
+        }
+
+        private Stmt returnStatement()
+        {
+            Token keyword = Previous();
+
+            //Expect return value if next token is not ';'
+            Expr value = null;
+            if(!Check(TokenType.SEMICOLON))
+            {
+                value = Expression();
+            }
+
+            Consume(TokenType.SEMICOLON, "Expect ';' after return value");
+
+            return new Stmt.Return(keyword, value);
         }
 
         private Stmt ForStatement()
@@ -326,7 +380,48 @@ namespace craftinginterpreters2
                 return new Expr.Unary(op, right);
             }
 
-            return Primary();
+            return Call();
+        }
+
+        private Expr Call()
+        {
+            Expr expr = Primary();
+            while(true)
+            {
+                if(Match(TokenType.LEFT_PAREN))
+                {
+                    expr = FinishCall(expr);
+                }
+                else
+                {
+                    break;
+                }
+            }
+
+            return expr;
+        }
+
+        // Normally the 'callee' argument is an identifier.
+        // Then this function will return a Expr.Call() with the calee as first argument.
+        // What happens if you do 1() ?
+        private Expr FinishCall(Expr callee)
+        {
+            List<Expr> arguments = new List<Expr>();
+            if(!Check(TokenType.RIGHT_PAREN))
+            {
+                do
+                {
+                    if(arguments.Count >= 8)
+                    {
+                        Error(Peek(), "Cannot have more than 8 arguments.");
+                    }
+                    arguments.Add(Expression());
+                } while (Match(TokenType.COMMA));
+            }
+
+            Token paren = Consume(TokenType.RIGHT_PAREN, "Expect ')' after arguments");
+
+            return new Expr.Call(callee, paren, arguments);
         }
 
         private Expr Primary()

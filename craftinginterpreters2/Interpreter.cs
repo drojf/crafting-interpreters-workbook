@@ -14,7 +14,35 @@ namespace craftinginterpreters2
 
     class Interpreter : Expr.Visitor<object>, Stmt.Visitor<MyVoid>
     {
-        private VariableEnvironment environment = new VariableEnvironment();
+        public readonly VariableEnvironment globals;
+        private VariableEnvironment environment;
+
+        private class ClockFn : LoxCallable
+        {
+            public int Arity()
+            {
+                return 0;
+            }
+
+            public object Call(Interpreter interpreter, List<object> arguments)
+            {
+                return ((double)DateTime.Now.Ticks) / TimeSpan.TicksPerMillisecond;
+            }
+
+            public override string ToString()
+            {
+                return "<native fn>";
+            }
+        }
+
+        public Interpreter()
+        {
+            this.globals = new VariableEnvironment();
+            this.environment = globals;
+
+            //Define built-in function to get the time in milliseconds
+            globals.Define("clock", new ClockFn());
+        }
 
         public void Intepret(List<Stmt> statements)
         {
@@ -192,7 +220,7 @@ namespace craftinginterpreters2
             return null;
         }
 
-        private void ExecuteBlock(List<Stmt> statements, VariableEnvironment environment)
+        public void ExecuteBlock(List<Stmt> statements, VariableEnvironment environment)
         {
             //save the last environment (to be restored later)
             VariableEnvironment previous = this.environment;
@@ -268,6 +296,51 @@ namespace craftinginterpreters2
             }
 
             return null;
+        }
+
+        public object VisitCallExpr(Expr.Call expr)
+        {
+            object callee = Evaluate(expr.callee);
+
+            List<object> arguments = new List<object>();
+            foreach(Expr argument in expr.arguments)
+            {
+                arguments.Add(Evaluate(argument));
+            }
+
+            if(!(callee is LoxCallable))
+            {
+                throw new RuntimeError(expr.paren, "Can only call functions and classes.");
+            }
+
+            LoxCallable function = (LoxCallable)callee;
+
+            //check number of arguments before calling
+            if(arguments.Count != function.Arity())
+            {
+                throw new RuntimeError(expr.paren, $"Expected {function.Arity()} but got {arguments.Count}");
+            }
+
+            return function.Call(this, arguments);
+        }
+
+        public MyVoid VisitFunctionStmt(Stmt.Function stmt)
+        {
+            // Capture the environment when the function is declared, for closures
+            LoxFunction function = new LoxFunction(stmt, environment);
+            environment.Define(stmt.name.lexeme, function);
+            return null;
+        }
+
+        public MyVoid VisitReturnStmt(Stmt.Return stmt)
+        {
+            object value = null;
+            if(stmt.value != null)
+            {
+                value = Evaluate(stmt.value);
+            }
+
+            throw new Return(value);
         }
     }
 }
