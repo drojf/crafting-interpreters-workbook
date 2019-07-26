@@ -31,6 +31,11 @@ namespace craftinginterpreters2
         {
             try
             {
+                if(Match(TokenType.CLASS))
+                {
+                    return ClassDeclaration();
+                }
+
                 if(Match(TokenType.FUN))
                 {
                     return function("function");
@@ -48,6 +53,22 @@ namespace craftinginterpreters2
                 Synchronize();
                 return null;
             }
+        }
+
+        private Stmt ClassDeclaration()
+        {
+            Token name = Consume(TokenType.IDENTIFIER, "Expect class name");
+            Consume(TokenType.LEFT_BRACE, "Expect '{' before class body");
+
+            List<Stmt.Function> methods = new List<Stmt.Function>();
+            while(!Check(TokenType.RIGHT_BRACE) && !IsAtEnd())
+            {
+                methods.Add(function("method"));
+            }
+
+            Consume(TokenType.RIGHT_BRACE, "Expect '}' after class body.");
+
+            return new Stmt.Class(name, methods);
         }
 
         // "kind" is used to differentiate a class-method from a standalone method
@@ -306,6 +327,8 @@ namespace craftinginterpreters2
                 {
                     case Expr.Variable variableExpression:
                         return new Expr.Assign(variableExpression.name, value);
+                    case Expr.Get getExpression:
+                        return new Expr.Set(getExpression.obj, getExpression.name, value);
                 }
 
                 Error(equals, "Invalid assignment target.");
@@ -392,6 +415,11 @@ namespace craftinginterpreters2
                 {
                     expr = FinishCall(expr);
                 }
+                else if(Match(TokenType.DOT))
+                {
+                    Token name = Consume(TokenType.IDENTIFIER, "Expect property name after '.'");
+                    expr = new Expr.Get(expr, name);
+                }
                 else
                 {
                     break;
@@ -451,6 +479,11 @@ namespace craftinginterpreters2
                 Expr expr = Expression();
                 Consume(TokenType.RIGHT_PAREN, "Expect ')' after expresssion.");
                 return new Expr.Grouping(expr);
+            }
+
+            if(Match(TokenType.THIS))
+            {
+                return new Expr.This(Previous());
             }
 
             if(Match(TokenType.IDENTIFIER))

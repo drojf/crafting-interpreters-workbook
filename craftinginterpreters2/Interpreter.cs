@@ -355,7 +355,7 @@ namespace craftinginterpreters2
         public MyVoid VisitFunctionStmt(Stmt.Function stmt)
         {
             // Capture the environment when the function is declared, for closures
-            LoxFunction function = new LoxFunction(stmt, environment);
+            LoxFunction function = new LoxFunction(stmt, environment, isInitializer: false);
             environment.Define(stmt.name.lexeme, function);
             return null;
         }
@@ -369,6 +369,53 @@ namespace craftinginterpreters2
             }
 
             throw new Return(value);
+        }
+
+        public MyVoid VisitClassStmt(Stmt.Class stmt)
+        {
+            environment.Define(stmt.name.lexeme, null);
+
+            Dictionary<string, LoxFunction> methods = new Dictionary<string, LoxFunction>();
+            foreach (Stmt.Function method in stmt.methods)
+            {
+                LoxFunction function = new LoxFunction(method, environment, isInitializer: method.name.lexeme == "init");
+                methods[method.name.lexeme] = function;
+            }
+
+            LoxClass klass = new LoxClass(stmt.name.lexeme, methods);
+
+            environment.Assign(stmt.name, new LoxClass(stmt.name.lexeme, methods));
+            return null;
+        }
+
+        public object VisitGetExpr(Expr.Get expr)
+        {
+            switch(Evaluate(expr.obj))
+            {
+                case LoxInstance instance:
+                    return instance.Get(expr.name);
+
+                default:
+                    throw new RuntimeError(expr.name, "Only instances have properties");
+            }
+        }
+
+        public object VisitSetExpr(Expr.Set expr)
+        {
+            switch (Evaluate(expr.obj))
+            {
+                case LoxInstance objectInstance:
+                    object value = Evaluate(expr.value);
+                    objectInstance.Set(expr.name, value);
+                    return value;
+            }
+
+            throw new RuntimeError(expr.name, "Only instances have fields");
+        }
+
+        public object VisitThisExpr(Expr.This expr)
+        {
+            return LookUpVariable(expr.keyword, expr);
         }
     }
 }

@@ -26,6 +26,11 @@ namespace craftinginterpreters2
             return "Printing call expression not implemeneted";
         }
 
+        public string VisitGetExpr(Expr.Get expr)
+        {
+            return "Printing get expression not implemeneted";
+        }
+
         public string VisitGroupingExpr(Expr.Grouping expr)
         {
             return Parenthesize("group", expr.expression);
@@ -43,6 +48,16 @@ namespace craftinginterpreters2
         public string VisitLogicalExpr(Expr.Logical expr)
         {
             return "Printing logical expression not implemented";
+        }
+
+        public string VisitSetExpr(Expr.Set expr)
+        {
+            return "Printing set expression not implemeneted";
+        }
+
+        public string VisitThisExpr(Expr.This expr)
+        {
+            return "visit this expression";
         }
 
         public string VisitUnaryExpr(Expr.Unary expr)

@@ -10,8 +10,17 @@ namespace craftinginterpreters2
         {
             None,
             Function,
+            Method,
+            Initializer,
         }
 
+        private enum ClassType
+        {
+            None,
+            Class,
+        }
+
+        private ClassType currentClass = ClassType.None;
         private readonly Interpreter intepreter;
         private readonly Stack<Dictionary<string, bool>> scopes = new Stack<Dictionary<string, bool>>();
         private FunctionType currentFunction = FunctionType.None;
@@ -154,6 +163,11 @@ namespace craftinginterpreters2
 
             if(stmt.value != null)
             {
+                if(currentFunction == FunctionType.Initializer)
+                {
+                    Lox.Error(stmt.keyword, "Cannot return a value from an initializer");
+                }
+
                 resolve(stmt.value);
             }
 
@@ -248,6 +262,60 @@ namespace craftinginterpreters2
         {
             resolve(stmt.condition);
             resolve(stmt.body);
+            return null;
+        }
+
+        public MyVoid VisitClassStmt(Stmt.Class stmt)
+        {
+            ClassType enclosingClass = currentClass;
+            currentClass = ClassType.Class;
+
+            declare(stmt.name);
+            define(stmt.name);
+
+            beginScope();
+            scopes.Peek()["this"] = true;
+
+            foreach (Stmt.Function method in stmt.methods)
+            {
+                FunctionType declaration = FunctionType.Method;
+                if(method.name.lexeme == "init")
+                {
+                    declaration = FunctionType.Initializer;
+                }
+
+                resolveFunction(method, declaration);
+            }
+
+            endScope();
+
+            currentClass = enclosingClass;
+
+            return null;
+        }
+
+        public MyVoid VisitGetExpr(Expr.Get expr)
+        {
+            resolve(expr.obj);
+            return null;
+        }
+
+        public MyVoid VisitSetExpr(Expr.Set expr)
+        {
+            resolve(expr.value);
+            resolve(expr.obj);
+            return null;
+        }
+
+        public MyVoid VisitThisExpr(Expr.This expr)
+        {
+            if(currentClass == ClassType.None)
+            {
+                Lox.Error(expr.keyword, "Cannot use 'this' outside of a class.");
+                return null;
+            }
+
+            resolveLocal(expr, expr.keyword);
             return null;
         }
     }

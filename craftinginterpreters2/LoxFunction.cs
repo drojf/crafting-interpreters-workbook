@@ -8,11 +8,13 @@ namespace craftinginterpreters2
     {
         private readonly Stmt.Function declaration;
         private readonly VariableEnvironment closure;
+        private readonly bool isInitializer;
 
-        public LoxFunction(Stmt.Function declaration, VariableEnvironment closure)
+        public LoxFunction(Stmt.Function declaration, VariableEnvironment closure, Boolean isInitializer)
         {
             this.closure = closure;
             this.declaration = declaration;
+            this.isInitializer = isInitializer;
         }
 
         public int Arity()
@@ -34,6 +36,12 @@ namespace craftinginterpreters2
             }
             catch(Return returnValue)
             {
+                // Allow an empty return ("return;") in a constructor. When this happens, return "this".
+                if(isInitializer)
+                {
+                    return closure.GetAt(0, "this");
+                }
+
                 return returnValue.value;
             }
 
@@ -44,5 +52,13 @@ namespace craftinginterpreters2
         {
             return $"<fn {declaration.name.lexeme}>";
         }
+
+        public LoxFunction Bind(LoxInstance instance)
+        {
+            VariableEnvironment environment = new VariableEnvironment(closure);
+            environment.Define("this", instance);
+            return new LoxFunction(declaration, environment, isInitializer);
+        }
+
     }
 }
